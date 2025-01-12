@@ -11,8 +11,24 @@ function PopupComponent() {
           enableHeadings: true,
           enableBullets: true,
           enableParagraphs: true,
+          enableBold: true,
+          enableItalics: true,
+          enableLinks: true,
         }; //If no settings are saved, default settings are applied
   });
+
+  //Would be used with a button to reset to default settings whenever the user clicks
+  const resetToDefaults = () => {
+    const defaultSettings = {
+      enableHeadings: true,
+      enableBullets: true,
+      enableParagraphs: true,
+      enableBold: true,
+      enableItalics: true,
+      enableLinks: true,
+    };
+    setSettings(defaultSettings);
+  };
 
   const [clipboardContent, setClipboardContent] = useState('');
   const [formattedContent, setFormattedContent] = useState('');
@@ -49,6 +65,25 @@ function PopupComponent() {
   const formatContent = (text: string) => {
     const lines = text.split('\n');
     return lines.map((line: string) => {
+
+        //links
+        if (settings.enableLinks) {
+          const linkRegex = /\[(.*?)\]\((.*?)\)/g;
+          line = line.replace(linkRegex, '<a href="$2">$1</a>');
+        }
+
+        //bold
+        if (settings.enableBold) {
+          const boldRegex = /\*\*(.*?)\*\*/g;
+          line = line.replace(boldRegex, '<b>$1</b>');
+        }
+
+        //italics
+        if (settings.enableItalics) {
+          const italicsRegex = /\*(.*?)\*/g;
+          line = line.replace(italicsRegex, '<i>$1</i>');
+        }
+
         if (settings.enableHeadings && line.startsWith('# ')) {
             return `<h1>${line.slice(2)}</h1>`; //Heading 1
         } else if (settings.enableHeadings && line.startsWith('## ')) {
@@ -98,6 +133,20 @@ function PopupComponent() {
       >
         {showFormatted ? 'Show Raw Text' : 'Show Formatted View'}
       </button>
+      <br />
+      <button
+        onClick={resetToDefaults}
+        style={{
+          margin: '10px 0',
+          padding: '5px 10px',
+          backgroundColor: '#dc3545',
+          color: 'white',
+          border: 'none',
+          cursor: 'pointer',
+        }}
+      >
+        Reset Formatting
+      </button>
       <div>
         <h3>Formatting Options:</h3>
         <label>
@@ -125,6 +174,33 @@ function PopupComponent() {
                 onChange={(e) => updateSettings('enableParagraphs', e.target.checked)}
             />
             Enable Paragraphs
+        </label>
+        <br />
+        <label>
+          <input 
+            type="checkbox"
+            checked={settings.enableBold}
+            onChange={(e) => updateSettings('enableBold', e.target.checked)}
+          />
+          Enable Bold
+        </label>
+        <br />
+        <label>
+          <input 
+            type="checkbox"
+            checked={settings.enableItalics}
+            onChange={(e) => updateSettings('enableItalics', e.target.checked)}
+          />
+          Enable Italics
+        </label>
+        <br />
+        <label>
+          <input 
+            type="checkbox"
+            checked={settings.enableLinks}
+            onChange={(e) => updateSettings('enableLinks', e.target.checked)}
+          />
+          Enable Links
         </label>
       </div>
       {showFormatted ? (
