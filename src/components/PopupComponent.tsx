@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 function PopupComponent() {
 
   //Gets the setting from the local storage on load. 
-  const [settings, setSettings] = useState(() => {
+  const [settings, setSettings] = useState<{ [key: string]: boolean }>(() => {
     const savedSettings = localStorage.getItem('draftEaseSettings');
     return savedSettings
       ? JSON.parse(savedSettings)
@@ -40,6 +40,13 @@ function PopupComponent() {
     localStorage.setItem('draftEaseSettings', JSON.stringify(settings));
   }, [settings]);
 
+  //updates the content in real time whenever the content or settings change
+  useEffect(() => {
+    if (clipboardContent) {
+      setFormattedContent(formatContent(clipboardContent))
+    }
+  }, [clipboardContent, settings]);
+
   const handleTransferClick = async () => {
     try {
       if (navigator.clipboard) {
@@ -59,6 +66,13 @@ function PopupComponent() {
       console.error('Failed to read clipboard:', error);
       setStatusMessage('Failed to fetch clipboard content.');
     }
+  };
+
+  // Clear the clipboard and formatted content
+  const clearContent = () => {
+    setClipboardContent('');
+    setFormattedContent('');
+    setStatusMessage('Content cleared!');
   };
 
   //formatting function to convert the rich text to html
@@ -98,8 +112,22 @@ function PopupComponent() {
     }).join('');
   };
 
+  const wordCount = (text: string) => text.split(/\s+/).filter((word) => word).length;
+  const charCount = (text: string) => text.length;
+
   const handleToggleView = () => {
     setShowFormatted(!showFormatted);
+  }
+
+  //copies the formatted content back to the clipboard
+  const handleCopyToClipboard = async () => {
+    try {
+      await navigator.clipboard.writeText(formattedContent);
+      setStatusMessage('Formatted content copied to clipboard!');
+    } catch (error) {
+      console.error('Failed to copy to clipboard:', error);
+      setStatusMessage('Failed to copy content')
+    }
   }
 
   const updateSettings = (key: string, value: boolean) => {
@@ -110,8 +138,19 @@ function PopupComponent() {
   return (
     <div style={{ padding: '20px', fontFamily: 'Arial' }}>
       <h2>DraftEase</h2>
-      <button onClick={handleTransferClick} style={{ margin: '10px 0' }}>
+      <button 
+        onClick={handleTransferClick}
+        title="Fetch content from the clipboard and format it" 
+        style={{ margin: '10px 0' }}
+      >
         Transfer Content
+      </button>
+      <button
+        onClick={handleCopyToClipboard}
+        title="Copy the formatted content back to the clipboard"
+        style={{ margin: '10px 5px', backgroundColor: '#28a745', color: 'white' }}
+      >
+        Copy Formatted Content
       </button>
       {statusMessage && <p>{statusMessage}</p>}
       {/* <textarea
@@ -122,6 +161,7 @@ function PopupComponent() {
       /> */}
       <button
         onClick={handleToggleView}
+        title="Toggle between raw text and formatted view"
         style={{
             margin: '10px 0',
             padding: '5px 10px',
@@ -135,7 +175,23 @@ function PopupComponent() {
       </button>
       <br />
       <button
+        onClick={clearContent}
+        title="Clear the clipboard and formatted content"
+        style={{
+          margin: '10px 0',
+          padding: '5px 10px',
+          backgroundColor: '#ffc107',
+          color: 'black',
+          border: 'none',
+          cursor: 'pointer',
+        }}
+      >
+        Clear Content
+      </button>
+      <br />
+      <button
         onClick={resetToDefaults}
+        title="Reset all settings to their default values"
         style={{
           margin: '10px 0',
           padding: '5px 10px',
@@ -149,59 +205,32 @@ function PopupComponent() {
       </button>
       <div>
         <h3>Formatting Options:</h3>
-        <label>
+        {Object.entries(settings).map(([key, value]) => (
+          <label key={key} style={{ display: 'block', marginBottom: '5px'}}>
             <input 
-                type="checkbox"
-                checked={settings.enableHeadings}
-                onChange={(e) => updateSettings('enableHeadings', e.target.checked)}
+              type="checkbox"
+              checked={value}
+              onChange={(e) => updateSettings(key, e.target.checked)}
             />
-            Enable Headings
-        </label>
-        <br />
-        <label>
-            <input 
-                type="checkbox"
-                checked={settings.enableBullets}
-                onChange={(e) => updateSettings('enableBullets', e.target.checked)}
-            />
-            Enable Bullets
-        </label>
-        <br />
-        <label>
-            <input 
-                type="checkbox"
-                checked={settings.enableParagraphs}
-                onChange={(e) => updateSettings('enableParagraphs', e.target.checked)}
-            />
-            Enable Paragraphs
-        </label>
-        <br />
-        <label>
-          <input 
-            type="checkbox"
-            checked={settings.enableBold}
-            onChange={(e) => updateSettings('enableBold', e.target.checked)}
-          />
-          Enable Bold
-        </label>
-        <br />
-        <label>
-          <input 
-            type="checkbox"
-            checked={settings.enableItalics}
-            onChange={(e) => updateSettings('enableItalics', e.target.checked)}
-          />
-          Enable Italics
-        </label>
-        <br />
-        <label>
-          <input 
-            type="checkbox"
-            checked={settings.enableLinks}
-            onChange={(e) => updateSettings('enableLinks', e.target.checked)}
-          />
-          Enable Links
-        </label>
+            {`Enable ${key.replace('enable', '').trim()}`}
+          </label>
+        ))}
+      </div>
+              
+      {/* <div style={{ marginTop: '15px', fontSize: '14px', color: '#555' }}>
+        <h4>Enabled Formatting Options:</h4>
+        <ul>
+          {Object.entries(settings)
+            .filter(([_, value]) => value)
+            .map(([key]) => (
+              <li key={key}>{key.replace('enable', '').trim()}</li>
+            ))}
+        </ul>
+      </div> */}
+      <div>
+        <h4>Live Stats:</h4>
+        <p>Raw Content: {charCount(clipboardContent)} characters, {wordCount(clipboardContent)} words</p>
+        <p>Formatted Content: {charCount(formattedContent)} characters, {wordCount(formattedContent)} words</p>
       </div>
       {showFormatted ? (
         <div 
