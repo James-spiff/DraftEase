@@ -34,6 +34,7 @@ function PopupComponent() {
   const [formattedContent, setFormattedContent] = useState('');
   const [statusMessage, setStatusMessage] = useState('');
   const [showFormatted, setShowFormatted] = useState(true); //for toggling between raw text view and formatted html view
+  const [theme, setTheme] = useState<'light' | 'dark'>('light');
   
   //Save settings to local storage whenever it changes. This is like an autosave feature
   useEffect(() => {
@@ -119,6 +120,8 @@ function PopupComponent() {
     setShowFormatted(!showFormatted);
   }
 
+  const toggleTheme = () => setTheme(theme === 'light' ? 'dark' : 'light');
+
   //copies the formatted content back to the clipboard
   const handleCopyToClipboard = async () => {
     try {
@@ -134,9 +137,41 @@ function PopupComponent() {
     setSettings((prev: typeof settings) => ({ ...prev, [key]: value }));
   } //Updates the specific setting based on user interaction
 
+  //Downloads the formatted content as a HTML file
+  const saveToFile = () => {
+    const blob = new Blob([formattedContent], { type: 'text/html' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = 'formatted-content.html';
+    link.click();
+  };
+
+  //Adds Drag and Drop support
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    const file = e.dataTransfer.files[0];
+    if (file && file.type === 'text/plain' ) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setClipboardContent(e.target?.result as string);
+      };
+      reader.readAsText(file)
+    }
+  }
+
   // make it so that the Show Raw Text button only displays when the Transfer Content button has been clicked
   return (
-    <div style={{ padding: '20px', fontFamily: 'Arial' }}>
+    <div 
+      onDrop={handleDrop}
+      onDragOver={(e) => e.preventDefault()}
+      style={{ 
+        padding: '20px', 
+        fontFamily: 'Arial',
+        backgroundColor: theme === 'light' ? '#fff' : '#333',
+        color: theme === 'light' ? '#000' : '#fff',
+        minHeight: '100vh', 
+      }}
+    >
       <h2>DraftEase</h2>
       <button 
         onClick={handleTransferClick}
@@ -159,20 +194,7 @@ function PopupComponent() {
         style={{ width: '100%', height: '100px', marginTop: '10px' }}
         placeholder="Clipboard content will appear here..."
       /> */}
-      <button
-        onClick={handleToggleView}
-        title="Toggle between raw text and formatted view"
-        style={{
-            margin: '10px 0',
-            padding: '5px 10px',
-            backgroundColor: '#007bff',
-            color: 'white',
-            border: 'none',
-            cursor: 'pointer',
-        }}
-      >
-        {showFormatted ? 'Show Raw Text' : 'Show Formatted View'}
-      </button>
+      
       <br />
       <button
         onClick={clearContent}
@@ -190,6 +212,12 @@ function PopupComponent() {
       </button>
       <br />
       <button
+        onClick={saveToFile}
+        style={{ margin: '10px 5px', backgroundColor: '#007bff'}}
+      >
+        Save to File
+      </button>
+      <button
         onClick={resetToDefaults}
         title="Reset all settings to their default values"
         style={{
@@ -202,6 +230,14 @@ function PopupComponent() {
         }}
       >
         Reset Formatting
+      </button>
+      <br />
+      <button
+        onClick={toggleTheme}
+        title="Toggle between light and dark theme"
+        style={{ margin: '10px 5px', backgroundColor: '#6c757d' }}
+      >
+        Toggle Theme
       </button>
       <div>
         <h3>Formatting Options:</h3>
@@ -248,7 +284,8 @@ function PopupComponent() {
       ) : (
         <textarea 
             value={clipboardContent}
-            readOnly
+            //readOnly
+            onChange={(e) => setClipboardContent(e.target.value)}
             style={{
                 width: '100%',
                 height: '150px',
@@ -257,6 +294,20 @@ function PopupComponent() {
             }}
         />
       )}
+      <button
+        onClick={handleToggleView}
+        title="Toggle between raw text and formatted view"
+        style={{
+            margin: '10px 0',
+            padding: '5px 10px',
+            backgroundColor: '#007bff',
+            color: 'white',
+            border: 'none',
+            cursor: 'pointer',
+        }}
+      >
+        {showFormatted ? 'Show Raw Text' : 'Show Formatted View'}
+      </button>
     </div>
   );
 }
