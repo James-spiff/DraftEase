@@ -154,8 +154,12 @@ function PopupComponent() {
       const reader = new FileReader();
       reader.onload = (e) => {
         setClipboardContent(e.target?.result as string);
+        setFormattedContent(formatContent(e.target?.result as string));
+        setStatusMessage('File loaded!')
       };
-      reader.readAsText(file)
+      reader.readAsText(file);
+    } else {
+      setStatusMessage('Please drop a valid .txt file.');
     }
   }
 
@@ -166,79 +170,152 @@ function PopupComponent() {
       onDragOver={(e) => e.preventDefault()}
       style={{ 
         padding: '20px', 
-        fontFamily: 'Arial',
-        backgroundColor: theme === 'light' ? '#fff' : '#333',
-        color: theme === 'light' ? '#000' : '#fff',
+        fontFamily: 'Arial, sans-serif',
+        backgroundColor: theme === 'light' ? '#f9f9f9' : '#212529',
+        color: theme === 'light' ? '#212529' : '#f8f9fa',
         minHeight: '100vh', 
+        display: 'flex',
+        flexDirection: 'column',
+        lineHeight: '1.6',
       }}
     >
-      <h2>DraftEase</h2>
-      <button 
-        onClick={handleTransferClick}
-        title="Fetch content from the clipboard and format it" 
-        style={{ margin: '10px 0' }}
-      >
-        Transfer Content
-      </button>
-      <button
-        onClick={handleCopyToClipboard}
-        title="Copy the formatted content back to the clipboard"
-        style={{ margin: '10px 5px', backgroundColor: '#28a745', color: 'white' }}
-      >
-        Copy Formatted Content
-      </button>
-      {statusMessage && <p>{statusMessage}</p>}
-      {/* <textarea
-        value={clipboardContent}
-        readOnly
-        style={{ width: '100%', height: '100px', marginTop: '10px' }}
-        placeholder="Clipboard content will appear here..."
-      /> */}
-      
-      <br />
-      <button
-        onClick={clearContent}
-        title="Clear the clipboard and formatted content"
+      <h2 style={{ color: '#007bff', textAlign: 'center' }}>DraftEase</h2>
+      {/* Buttons Container */}
+      <div
         style={{
-          margin: '10px 0',
-          padding: '5px 10px',
-          backgroundColor: '#ffc107',
-          color: 'black',
-          border: 'none',
-          cursor: 'pointer',
+          display: 'flex',
+          gap: '10px',
+          flexWrap: 'wrap',
+          justifyContent: 'center',
+          marginBottom: '15px',
         }}
       >
-        Clear Content
-      </button>
-      <br />
-      <button
-        onClick={saveToFile}
-        style={{ margin: '10px 5px', backgroundColor: '#007bff'}}
-      >
-        Save to File
-      </button>
-      <button
-        onClick={resetToDefaults}
-        title="Reset all settings to their default values"
+        <button 
+          onClick={handleTransferClick}
+          title="Fetch content from the clipboard and format it" 
+          style={{ 
+            //margin: '10px 0' 
+            padding: '10px 20px',
+            backgroundColor: '#007bff',
+            color: 'white',
+            border: 'none',
+            borderRadius: '5px',
+            cursor: 'pointer',
+            //marginBottom: '15px',
+            transition: 'background-color 0.3s',
+          }}
+          onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#0056b3')}
+          onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = '#007bff')}
+        >
+          Transfer Content
+        </button>
+        <button
+          onClick={handleCopyToClipboard}
+          title="Copy the formatted content back to the clipboard"
+          style={{ 
+            //margin: '10px 5px', 
+            padding: '10px 20px', 
+            backgroundColor: '#28a745', 
+            color: 'white',
+            border: 'none',
+            borderRadius: '5px',
+            cursor: 'pointer',
+            //marginLeft: '10px',
+            transition: 'background-color 0.3s',
+          }}
+        >
+          Copy Formatted Content
+        </button>
+        {statusMessage && (
+          <p
+            style={{
+              marginTop: '10px',
+              fontSize: '14px',
+              color: statusMessage.includes('loaded') ? '#28a745' : '#dc3545'
+            }}
+          >
+            {statusMessage}
+          </p>
+        )}
+        {/* <textarea
+          value={clipboardContent}
+          readOnly
+          style={{ width: '100%', height: '100px', marginTop: '10px' }}
+          placeholder="Clipboard content will appear here..."
+        /> */}
+        
+        {/* <br /> */}
+        <button
+          onClick={clearContent}
+          title="Clear the clipboard and formatted content"
+          style={{
+            margin: '10px 0',
+            padding: '10px 20px',
+            backgroundColor: '#ffc107',
+            borderRadius: '5px',
+            color: 'black',
+            border: 'none',
+            cursor: 'pointer',
+          }}
+        >
+          Clear Content
+        </button>
+        {/* <br /> */}
+        <button
+          onClick={saveToFile}
+          style={{ margin: '10px 5px', padding: '10px 20px', backgroundColor: '#007bff'}}
+        >
+          Save to File
+        </button>
+        <button
+          onClick={resetToDefaults}
+          title="Reset all settings to their default values"
+          style={{
+            margin: '10px 0',
+            padding: '10px 20px',
+            backgroundColor: '#dc3545',
+            borderRadius: '5px',
+            color: 'white',
+            border: 'none',
+            cursor: 'pointer',
+          }}
+        >
+          Reset Formatting
+        </button>
+      </div>
+      {/* <br /> */}
+      {/* Drop Zone */}
+      <div
+        onDrop={handleDrop}
+        onDragOver={(e) => e.preventDefault()}
         style={{
-          margin: '10px 0',
-          padding: '5px 10px',
-          backgroundColor: '#dc3545',
-          color: 'white',
-          border: 'none',
-          cursor: 'pointer',
+          width: '100%',
+          maxWidth: '500px',
+          height: '150px',
+          border: '2px dashed #007bff',
+          borderRadius: '5px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          backgroundColor: 'f9f9f9',
+          color: '#6c757d',
+          textAlign: 'center',
+          marginBottom: '15px',
+          transition: 'border-color 0.3s, background-color 0.3s',
+        }}
+        onDragEnter={(e) => {
+          e.currentTarget.style.borderColor = '#0056b3';
+          e.currentTarget.style.backgroundColor = '#e9ecef'
+        }}
+        onDragLeave={(e) => {
+          e.currentTarget.style.borderColor = '#007bff';
+          e.currentTarget.style.backgroundColor = '#f9f9f9';
         }}
       >
-        Reset Formatting
-      </button>
-      <br />
-      <button
-        onClick={toggleTheme}
-        title="Toggle between light and dark theme"
-        style={{ margin: '10px 5px', backgroundColor: '#6c757d' }}
-      >
-        Toggle Theme
-      </button>
+        Drag and drop a .txt file here
+      </div>
+
+      {/* Formatting Options */}
       <div>
         <h3>Formatting Options:</h3>
         {Object.entries(settings).map(([key, value]) => (
@@ -253,17 +330,15 @@ function PopupComponent() {
         ))}
       </div>
               
-      {/* <div style={{ marginTop: '15px', fontSize: '14px', color: '#555' }}>
-        <h4>Enabled Formatting Options:</h4>
-        <ul>
-          {Object.entries(settings)
-            .filter(([_, value]) => value)
-            .map(([key]) => (
-              <li key={key}>{key.replace('enable', '').trim()}</li>
-            ))}
-        </ul>
-      </div> */}
-      <div>
+      {/* Responsive Live Stats */}
+      <div
+        style={{
+          marginTop: '20px',
+          fontSize: '14px',
+          color: theme === 'light' ? '#555' : 'white',
+          textAlign: 'center',
+        }}
+      >
         <h4>Live Stats:</h4>
         <p>Raw Content: {charCount(clipboardContent)} characters, {wordCount(clipboardContent)} words</p>
         <p>Formatted Content: {charCount(formattedContent)} characters, {wordCount(formattedContent)} words</p>
@@ -290,6 +365,7 @@ function PopupComponent() {
                 width: '100%',
                 height: '150px',
                 marginTop: '10px',
+                marginRight: '5px',
                 border: '1px solid #ccc',
             }}
         />
@@ -298,15 +374,35 @@ function PopupComponent() {
         onClick={handleToggleView}
         title="Toggle between raw text and formatted view"
         style={{
-            margin: '10px 0',
-            padding: '5px 10px',
-            backgroundColor: '#007bff',
+            marginTop: '15px',
+            padding: '10px 20px',
+            backgroundColor: '#17a2b8',
             color: 'white',
             border: 'none',
+            borderRadius: '5px',
             cursor: 'pointer',
+            transition: 'background-color 0.3s',
         }}
+        onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#138496')}
+        onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = '#17a2b8')}
       >
         {showFormatted ? 'Show Raw Text' : 'Show Formatted View'}
+      </button>
+      <button
+        onClick={toggleTheme}
+        title="Toggle between light and dark theme"
+        style={{ 
+          //marginLeft: '10px', 
+          marginTop: '15px',
+          padding: '10px 20px',
+          backgroundColor: '#6c757d',
+          color: 'white',
+          border: 'none',
+          borderRadius: '5px',
+          cursor: 'pointer', 
+        }}
+      >
+        Toggle Theme
       </button>
     </div>
   );
