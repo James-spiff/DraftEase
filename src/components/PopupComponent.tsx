@@ -4,6 +4,7 @@ import { useSettings } from '../hooks/useSettings'
 import ButtonsPanel from './ButtonsPanel'
 import DropZone from './DropZone'
 import LiveStats from './LiveStats'
+import WordPressExport from './WordPressExport'
 
 const PopupComponent = () => {
 
@@ -24,6 +25,9 @@ const PopupComponent = () => {
       const [formattedContent, setFormattedContent] = useState('');
       const [statusMessage, setStatusMessage] = useState('');
       const [showFormatted, setShowFormatted] = useState(true); //for toggling between raw text view and formatted html view
+      const [wordpressURL, setWordpressURL] = useState('');
+      const [wordpressUsername, setWordpressUsername] = useState('');
+      const [wordpressAppPassword, setWordpressAppPassword] = useState('');
   
       //formatting function to convert the rich text to html
       const formatContent = (text: string, settings: SettingsType) => {
@@ -155,6 +159,40 @@ const PopupComponent = () => {
               setStatusMessage('Please drop a valid .txt file.');
           }
       }
+    
+      const handleWordPressExport = async () => {
+        if (!wordpressURL || !wordpressUsername || !wordpressAppPassword) {
+          setStatusMessage('Please provide all Wordpress credentials.');
+          return;
+        }
+
+        try {
+          const authHeader = btoa(`${wordpressUsername}:${wordpressAppPassword}`);
+          const response = await fetch(`${wordpressURL}/wp-json/wp/v2/posts`, {
+            method: 'POST',
+            headers: {
+              'Authorization': `Basic ${authHeader}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              title: 'DraftEase Post',
+              content: formattedContent,
+              status: 'draft', //or publish if you want to publish immediately
+            }),
+          });
+
+          if (response.ok) {
+            const result = await response.json();
+            setStatusMessage(`Post exported successfully! View it at: ${result.link}`);
+          } else {
+            const errorText = await response.text()
+            setStatusMessage(`Failed to export: ${response.statusText} (${response.status}) - ${errorText}`);
+          }
+        } catch (error) {
+          console.error('Error exporting to WordPress:', error);
+          setStatusMessage('An error occurred while exporting to WordPress.')
+        }
+      }
   
 
   return (
@@ -246,6 +284,32 @@ const PopupComponent = () => {
       >
         {showFormatted ? 'Show Raw Text' : 'Show Formatted View'}
       </button>
+      <WordPressExport
+        wordpressURL={wordpressURL}
+        setWordpressURL={setWordpressURL}
+        wordpressUsername={wordpressUsername}
+        setWordpressUsername={setWordpressUsername}
+        wordpressAppPassword={wordpressAppPassword}
+        setWordpressAppPassword={setWordpressAppPassword}
+      />
+      <button
+        onClick={handleWordPressExport}
+        style={{
+          marginTop: '15px',
+          padding: '10px 20px',
+          backgroundColor: '#28a745',
+          color: 'white',
+          border: 'none',
+          borderRadius: '5px',
+          cursor: 'pointer',
+          transition: 'background-color 0.3s',
+        }}
+        onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#218838')}
+        onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = '#28a745')}
+      >
+        Export to WordPress
+      </button>
+
       <button
         onClick={toggleTheme}
         title="Toggle between light and dark theme"
