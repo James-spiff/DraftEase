@@ -1,6 +1,8 @@
-//import React from 'react'
+import { useEffect } from 'react'
 import { useSettings } from '../hooks/useSettings';
 import { saveToFile } from '../utils/fileHelpers'
+import { toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 interface ButtonsPanelProps {
   handleTransferClick: () => void;
@@ -12,7 +14,22 @@ interface ButtonsPanelProps {
 
 const ButtonsPanel: React.FC<ButtonsPanelProps> = ({ handleTransferClick, handleCopyToClipboard, clearContent, statusMessage, formattedContent }) => {
 
-    const { resetToDefaults } = useSettings();
+  const { resetToDefaults } = useSettings();
+
+  // Show toast when statusMessage changes
+  useEffect(() => {
+    if (statusMessage) {
+      toast(statusMessage, {
+        position: 'top-right',
+        autoClose: 3000, // Hide after 3 seconds
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        type: 'default'
+      });
+    }
+  }, [statusMessage]);
 
   return (
     <div
@@ -58,7 +75,7 @@ const ButtonsPanel: React.FC<ButtonsPanelProps> = ({ handleTransferClick, handle
         >
           Copy Formatted Content
         </button>
-        {statusMessage && (
+        {/* {statusMessage && (
           <p
             style={{
               marginTop: '10px',
@@ -68,7 +85,7 @@ const ButtonsPanel: React.FC<ButtonsPanelProps> = ({ handleTransferClick, handle
           >
             {statusMessage}
           </p>
-        )}
+        )} */}
         
         {/* <br /> */}
         <button
